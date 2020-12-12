@@ -1,0 +1,53 @@
+- hosts: ip 
+  tasks:
+          
+  - name: "configuring docker repository"
+    yum_repository:
+            name: "docker-ce"
+            description: "repo for docker"
+            baseurl: "https://download.docker.com/linux/centos/7/x86_64/stable/"
+            gpgcheck: no
+
+  - name: "installing docker-ce"
+    shell: "dnf install docker-ce --nobest -y"
+
+  - name: "starting and enabling the docker services"
+    service:
+           name: "docker"
+           state: started
+           enabled: yes 
+
+  - name: "installing python36 for the pip command"
+    package:
+           name: "python36"
+        
+  - name: "installing docker-py using pip"
+    pip:
+           name: "docker-py"
+
+  - name: "coping the webpage available in controller node document root to target node"
+    copy:
+           src: "/var/www/html/"
+           dest: "/htmlfiles/" 
+
+  - name: "pulling the image of httpd"
+    docker_image:
+            name: "httpd"
+            source: pull
+
+  - name: "launch the container"
+    docker_container:
+            name: "webserver"
+            image: "httpd"
+            state: started
+            volumes: "/htmlfiles/:/usr/local/apache2/htdocs/"
+            exposed_ports: "80"
+            ports: "8080:80"
+
+  - name: "setting firewall rule"
+    firewalld:
+            port: 8080/tcp
+            state: enabled
+            permanent: yes
+            immediate: yes 
+            
