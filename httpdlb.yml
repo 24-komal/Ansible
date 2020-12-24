@@ -1,0 +1,68 @@
+- hosts: webserver
+
+  tasks:
+
+  - name: "Install httpd and php software"
+    package:
+           name: "{{ item }}"
+           state: present
+    loop:
+            - httpd
+            - php
+
+  - name: "Coping the webpages"
+    copy: 
+           src: "index.php"
+           dest: "/var/www/html/index.php"
+
+  - name: "Starting the httpd and firewall services"
+    service:  
+           name: "{{ item }}"
+           state: started 
+    loop: 
+           - httpd
+           - firewalld
+
+  - name: "Setting the firewall rule"
+    firewalld:
+            port: 80/tcp
+            state: enabled
+            immediate: yes
+            permanent: yes 
+
+
+- hosts: localhost
+  tasks:
+
+  - name: "Installing haproxy"
+    package:
+           name: "haproxy"
+           state: present
+
+  - name: "Coping the config file"
+    template: 
+           src: "haproxy.cfg"
+           dest: "/etc/haproxy/haproxy.cfg"
+    notify:
+            - restarting the haproxy service
+
+  - name: "starting the haproxy anf firewall services"
+    service:
+           name: "{{ item }}"
+           state: started
+    loop:
+            - haproxy
+            - firewalld
+
+  - name: "setting the firewall"
+    firewalld:
+            port: 8080/tcp
+            state: enabled
+            immediate: yes
+            permanent: yes
+
+  handlers:
+          - name: "restarting the haproxy service"
+            service:
+                  name: "haproxy"
+                  state: restarted    
